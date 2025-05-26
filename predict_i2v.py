@@ -22,8 +22,8 @@ end_image_path      = "assets/girl_02.jpg" # Can be None for start-image-to-vide
 output_video_path   = "outputs/example_01.mp4"
 
 # Video settings
-video_length        = 120       # The max video length is 120 frames (24 frames per second)
-base_resolution     = 512       # # The pixels in the generated video are approximately 512 x 512. Values in the range of [384, 896] typically produce good video quality.
+video_length        = 24       # The max video length is 120 frames (24 frames per second)
+base_resolution     = 384       # # The pixels in the generated video are approximately 512 x 512. Values in the range of [384, 896] typically produce good video quality.
 video_size          = None      # Override base_resolution. Format: [height, width], e.g., [384, 672]
 # Control settings
 aspect_ratio        = "16:9"    # Do not change, currently "16:9" works better
@@ -35,8 +35,8 @@ cfg                 = 7.0
 scheduler_name      = "DDIM"    # Choose in ["Euler", "Euler A", "DPM++", "PNDM","DDIM"]
 
 # GPU memory settings
-low_gpu_memory_mode = False     # Low gpu memory mode
-gpu_offload_steps   = 5         # Choose in [0, 10, 7, 5, 1], the latter number requires less GPU memory but longer time
+low_gpu_memory_mode = True     # Low gpu memory mode
+gpu_offload_steps   = 0         # Choose in [0, 10, 7, 5, 1], the latter number requires less GPU memory but longer time
 
 # Random seed
 seed                = 42        # The Answer to the Ultimate Question of Life, The Universe, and Everything
@@ -50,7 +50,7 @@ auto_download       = True                      # Automatically download the mod
 auto_update         = True                      # If auto_download is enabled, check for updates and update the model if necessary
 
 # FP8 settings
-fp8_quant_mode      = "none"    # Choose in ["none", "lite", "strong", "extreme"]. GPU memory decreases depending on the modes: bf16 default > fp8 lite > fp8 strong > fp8 extreme.
+fp8_quant_mode      = "lite"    # Choose in ["none", "lite", "strong", "extreme"]. GPU memory decreases depending on the modes: bf16 default > fp8 lite > fp8 strong > fp8 extreme.
 fp8_data_type       = "auto"    # Choose in ["auto", "fp8_e5m2", "fp8_e4m3fn"]. The "extreme" mode with "fp8_e5m2" is not recommended for achieving good quality.
 
 # LoRA settings
@@ -117,6 +117,7 @@ def try_setup_pipeline(model_path, weight_dtype, config, fp8_quant_mode, fp8_dat
             model_path, 
             subfolder="vae"
         ).to(weight_dtype)
+        vae = vae.to(device)
         print("Vae loaded ...")
 
         # Get Transformer
@@ -126,6 +127,7 @@ def try_setup_pipeline(model_path, weight_dtype, config, fp8_quant_mode, fp8_dat
             subfolder="transformer",
             transformer_additional_kwargs=transformer_additional_kwargs
         ).to(weight_dtype)
+        transformer = transformer.to(device)
         print("Transformer loaded ...")
 
         # Transformer to fp8
@@ -156,6 +158,7 @@ def try_setup_pipeline(model_path, weight_dtype, config, fp8_quant_mode, fp8_dat
         clip_image_encoder = CLIPVisionModelWithProjection.from_pretrained(
             model_path, subfolder="image_encoder"
         ).to(weight_dtype)
+        clip_image_encoder = clip_image_encoder.to(device)
         clip_image_processor = CLIPImageProcessor.from_pretrained(
             model_path, subfolder="image_encoder"
         )
@@ -175,7 +178,8 @@ def try_setup_pipeline(model_path, weight_dtype, config, fp8_quant_mode, fp8_dat
             clip_image_encoder=clip_image_encoder,
             clip_image_processor=clip_image_processor,
         )
-
+        pipeline = pipeline.to(device)
+        print("Pipeline created ...")
         # Load embeddings
         embeddings = load_safetensors(os.path.join(model_path, "embeddings.safetensors"))
         pipeline.embeddings = embeddings
