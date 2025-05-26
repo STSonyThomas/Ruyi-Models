@@ -62,7 +62,7 @@ Download and save this repository to the path *ComfyUI/custom_nodes/Ruyi-Models*
 ```shell
 # download the repo
 cd ComfyUI/custom_nodes/
-git clone https://github.com/IamCreateAI/Ruyi-Models.git
+git clone https://github.com/STSonyThomas/Ruyi-Models
 
 # install requirements
 pip install -r Ruyi-Models/requirements.txt
